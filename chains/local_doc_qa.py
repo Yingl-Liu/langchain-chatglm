@@ -297,6 +297,7 @@ class LocalDocQA:
             # response = {"query": query,
             #             "result": resp}
             response = {"query": query,
+                        "prompt":prompt,
                         "result": resp,
                         "source_documents": related_docs_with_score_ori}
             yield response, history

@@ -75,7 +75,7 @@ def main():
             else:
                 print(resp["result"])
         # result.write(resp["result"])
-        res = {'id':idx, 'query': query, 'answer':resp["result"] }
+        res = {'id':idx, 'query': query, 'prompt':resp["prompt"], 'answer':resp["result"] }
         results.append(res)
         if REPLY_WITH_SOURCE:
             #source_text = [f"""出处 [{inum + 1}] {os.path.split(doc.metadata['source'])[-1]}：\n\n{doc.page_content}\n\n"""
