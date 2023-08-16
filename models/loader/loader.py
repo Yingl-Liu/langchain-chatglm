@@ -215,30 +215,33 @@ class LoaderCheckPoint:
                     "`pip install bitsandbytes``pip install accelerate`."
                 ) from exc
 
-            params = {"low_cpu_mem_usage": True}
+            params = {"low_cpu_mem_usage": False}
 
             if not self.llm_device.lower().startswith("cuda"):
                 raise SystemError("8bit 模型需要 CUDA 支持，或者改用量化后模型！")
             else:
-                params["device_map"] = 'auto'
+                # params["device_map"] = 'auto'
                 params["trust_remote_code"] = True
-                params['quantization_config'] = BitsAndBytesConfig(load_in_8bit=True,
-                                                                   llm_int8_enable_fp32_cpu_offload=False)
+                # params['quantization_config'] = BitsAndBytesConfig(load_in_8bit=True,
+                #                                                    llm_int8_enable_fp32_cpu_offload=False)
+                params['config'] = self.model_config
 
-            with init_empty_weights():
-                model = LoaderClass.from_config(self.model_config, trust_remote_code=True)
-            model.tie_weights()
-            if self.device_map is not None:
-                params['device_map'] = self.device_map
-            else:
-                params['device_map'] = infer_auto_device_map(
-                    model,
-                    dtype=torch.int8,
-                    no_split_module_classes=model._no_split_modules
-                )
+            # with init_empty_weights():
+            #     model = LoaderClass.from_config(self.model_config, trust_remote_code=True)
+            # model.tie_weights()
+            # if self.device_map is not None:
+            #     params['device_map'] = self.device_map
+            # else:
+            #     params['device_map'] = infer_auto_device_map(
+            #         model,
+            #         dtype=torch.int8,
+            #         no_split_module_classes=model._no_split_modules
+            #     )
             try:
 
                 model = LoaderClass.from_pretrained(checkpoint, **params)
+                print(f"Quantized to 8 bit")
+                model.quantize(8)
             except ImportError as exc:
                 raise ValueError(
                     "如果开启了8bit量化加载,项目无法启动，参考此位置，选择合适的cuda版本，https://github.com/TimDettmers/bitsandbytes/issues/156"
@@ -463,6 +466,7 @@ class LoaderCheckPoint:
                     if k.startswith("transformer.prefix_encoder."):
                         new_prefix_state_dict[k[len("transformer.prefix_encoder."):]] = v
                 self.model.transformer.prefix_encoder.load_state_dict(new_prefix_state_dict)
+                self.model = self.model.half().cuda()
                 self.model.transformer.prefix_encoder.float()
                 print("加载ptuning检查点成功！")
             except Exception as e:

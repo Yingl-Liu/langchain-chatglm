@@ -54,8 +54,8 @@ def get_answer(query, vs_path, history, mode, score_threshold=VECTOR_SEARCH_SCOR
                 query=query, vs_path=vs_path, chat_history=history, streaming=streaming):
             source = "\n\n"
             source += "".join(
-                [f"""<details> <summary>出处 [{i + 1}] {os.path.split(doc.metadata["source"])[-1]}</summary>\n"""
-                 f"""{doc.page_content}\n"""
+                [f"""<details> <summary>出处 [{i + 1}] {os.path.split(doc[0].metadata["source"])[-1]}</summary>\n"""
+                 f"""{doc[0].page_content}\n"""
                  f"""</details>"""
                  for i, doc in
                  enumerate(resp["source_documents"])])
@@ -103,10 +103,13 @@ def init_model():
 
     args_dict = vars(args)
     shared.loaderCheckPoint = LoaderCheckPoint(args_dict)
-    llm_model_ins = shared.loaderLLM()
+    llm_model_ins = shared.loaderLLM(use_ptuning_v2=USE_PTUNING_V2)
     llm_model_ins.history_len = LLM_HISTORY_LEN
     try:
-        local_doc_qa.init_cfg(llm_model=llm_model_ins)
+        local_doc_qa.init_cfg(llm_model=llm_model_ins,
+                              embedding_model=EMBEDDING_MODEL,
+                              embedding_device=EMBEDDING_DEVICE,
+                              top_k=VECTOR_SEARCH_TOP_K)
         answer_result_stream_result = local_doc_qa.llm_model_chain(
             {"prompt": "你好", "history": [], "streaming": False})
 

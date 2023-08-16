@@ -120,7 +120,7 @@ def generate_prompt(related_docs: List[str],
     return prompt
 
 # process querry
-def generate_prompt_1(query: str, prompt_template: str = PROMPT_TEMPLATE1) -> str:
+def generate_prompt_1(query: str, prompt_template: str = PROMPT_TEMPLATE2) -> str:
     prompt = prompt_template.replace("{query}", query)
     return prompt
 
@@ -154,6 +154,7 @@ class LocalDocQA:
                                                 model_kwargs={'device': embedding_device})
         self.top_k = top_k
         filepath = '/home/cambricon/lsc/data/datasets/knowledge_point_modify.csv'
+        #filepath = '/home/cambricon/lsc/data/datasets/difficult_ques_modify_keepchinese.csv'
         loader = CSVLoader(filepath)
         self.docs = loader.load()
 
@@ -259,17 +260,10 @@ class LocalDocQA:
             find_docs.append((self.docs[row], docs_with_score[i][1]))
         return find_docs
 
+    def find_ori_doc_with_id(self, id):
+        return [(self.docs[id], 0.0)]
+
     def get_knowledge_based_answer(self, query, vs_path, chat_history=[], streaming: bool = STREAMING):
-        # import pdb; pdb.set_trace()
-        # print('###################### process query ###################')
-        # ###################### process query ###################
-        # prompt = generate_prompt_1(query)
-        # print(prompt)
-        # query_info_result = self.extract_query_info(query)
-        
-        # for answer_result in query_info_result['answer_result_stream']:
-        #     processed_query = answer_result.llm_output['answer']
-        # print(processed_query)
         # print('##################### find topk ########################')
         ##################### find topk ########################
         vector_store = load_vector_store(vs_path, self.embeddings)
@@ -279,12 +273,17 @@ class LocalDocQA:
         related_docs_with_score = vector_store.similarity_search_with_score(query, k=self.top_k)
         related_docs_with_score = self.doc_filter_by_score(related_docs_with_score)
         related_docs_with_score_ori = self.find_ori_doc(related_docs_with_score)
+        # related_docs_with_score_ori = self.find_ori_doc_with_id(query['id']-1)
         
         torch_gc()
-        if len(related_docs_with_score) > 0:
+        if len(related_docs_with_score_ori) > 0:
             prompt = generate_prompt(related_docs_with_score_ori, query)
         else:
-            prompt = query
+            prompt = generate_prompt_1(query, PROMPT_TEMPLATE2)
+        # response = {"query": query,
+        #             "prompt":prompt,
+        #             "source_documents": related_docs_with_score_ori}
+        # yield response, chat_history
         # print('#################### LLM answer ###################')
         #################### LLM answer ###################
         answer_result_stream_result = self.llm_model_chain(
@@ -301,20 +300,6 @@ class LocalDocQA:
                         "result": resp,
                         "source_documents": related_docs_with_score_ori}
             yield response, history
-
-        ################### process answer ##################
-        # print('################### process answer ##################')
-        
-        # final_answer = self.process_answer(resp)
-        # for answer_result in final_answer['answer_result_stream']:
-        #     resp = answer_result.llm_output["answer"]
-        #     history = answer_result.history
-        #     history[-1][0] = query
-        #     response = {"query": query,
-        #                 "result": resp,
-        #                 "source_documents": related_docs_with_score_ori}
-        #     yield response, history
-        
 
     # query      查询内容
     # vs_path    知识库路径

@@ -107,6 +107,12 @@ llm_model_dict = {
         "local_model_path": None,
         "provides": "LLamaLLMChain"
     },
+    "chinese-alpaca-2-7b-int8": {
+        "name": "chinese-alpaca-2-7b",
+        "pretrained_model_name": "chinese-alpaca-2-7b",
+        "local_model_path": "/home/cambricon/lsc/data/models/chinese-alpaca-2-7b",
+        "provides": "LLamaLLMChain"
+    },
     # 直接调用返回requests.exceptions.ConnectionError错误，需要通过huggingface_hub包里的snapshot_download函数
     # 下载模型，如果snapshot_download还是返回网络错误，多试几次，一般是可以的，
     # 如果仍然不行，则应该是网络加了防火墙(在服务器上这种情况比较常见)，基本只能从别的设备上下载，
@@ -221,7 +227,7 @@ USE_LORA = True if LLM_LORA_PATH else False
 STREAMING = True
 
 # Use p-tuning-v2 PrefixEncoder
-USE_PTUNING_V2 = False
+USE_PTUNING_V2 = True
 PTUNING_DIR='./ptuning-v2'
 # LLM running device
 LLM_DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
@@ -259,7 +265,7 @@ PROMPT_TEMPLATE1 = """你的任务：根据{}内的信息，提取出信息的�
 
 不需要回答额外的内容，不允许在回答中添加编造成分。现在给出的信息是：{{query}}"""
 
-PROMPT_TEMPLATE2 = """{{query}}。将上述{}中的内容按照html格式输出，遇到数学公式或者化学式转成latex格式。 """
+PROMPT_TEMPLATE2 = """回答问题，如果回答中包含的数学、物理公式及化学方程式请用latex的语法表示。问题是：{query}"""
 
 # 缓存知识库数量,如果是ChatGLM2,ChatGLM2-int4,ChatGLM2-int8模型若检索效果不好可以调成’10’
 #CACHED_VS_NUM = 1
@@ -276,10 +282,10 @@ CHUNK_SIZE = 250
 LLM_HISTORY_LEN = 0
 
 # 知识库检索时返回的匹配内容条数
-VECTOR_SEARCH_TOP_K = 3
+VECTOR_SEARCH_TOP_K = 1
 
 # 知识检索内容相关度 Score, 数值范围约为0-1100，如果为0，则不生效，建议设置为500左右，经测试设置为小于500时，匹配结果更精准
-VECTOR_SEARCH_SCORE_THRESHOLD = 400
+VECTOR_SEARCH_SCORE_THRESHOLD = 550
 
 NLTK_DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "nltk_data")
 
