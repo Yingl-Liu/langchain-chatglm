@@ -282,7 +282,7 @@ CHUNK_SIZE = 250
 LLM_HISTORY_LEN = 0
 
 # 知识库检索时返回的匹配内容条数
-VECTOR_SEARCH_TOP_K = 1
+VECTOR_SEARCH_TOP_K = 3
 
 # 知识检索内容相关度 Score, 数值范围约为0-1100，如果为0，则不生效，建议设置为500左右，经测试设置为小于500时，匹配结果更精准
 VECTOR_SEARCH_SCORE_THRESHOLD = 550

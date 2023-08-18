@@ -35,6 +35,9 @@ flag_csv_logger = gr.CSVLogger()
 def get_answer(query, vs_path, history, mode, score_threshold=VECTOR_SEARCH_SCORE_THRESHOLD,
                vector_search_top_k=VECTOR_SEARCH_TOP_K, chunk_conent: bool = True,
                chunk_size=CHUNK_SIZE, streaming: bool = STREAMING):
+    if vs_path is None or not os.path.exists(vs_path) or "index.faiss" not in os.listdir(vs_path):
+        vs_path = os.path.join(KB_ROOT_PATH, get_vs_list()[1], "vector_store")
+
     if mode == "Bing搜索问答":
         for resp, history in local_doc_qa.get_search_result_based_answer(
                 query=query, chat_history=history, streaming=streaming):
@@ -122,8 +125,7 @@ def init_model():
         logger.error(e)
         reply = """模型未成功加载，请到页面左上角"模型配置"选项卡中重新选择后点击"加载模型"按钮"""
         if str(e) == "Unknown platform: darwin":
-            logger.info("该报错可能因为您使用的是 macOS 操作系统，需先下载模型至本地后执行 Web UI，具体方法请参考项目 README 中本地部署方法及常见问题："
-                        " https://github.com/imClumsyPanda/langchain-ChatGLM")
+            logger.info("该报错可能因为您使用的是 macOS 操作系统，需先下载模型至本地后执行 Web UI")
         else:
             logger.info(reply)
         return reply
@@ -321,7 +323,6 @@ block_css = """.importantButton {
 
 webui_title = """
 # 🎉langchain-ChatGLM WebUI🎉
-👍 [https://github.com/imClumsyPanda/langchain-ChatGLM](https://github.com/imClumsyPanda/langchain-ChatGLM)
 """
 default_vs = get_vs_list()[0] if len(get_vs_list()) > 1 else "为空"
 init_message = f"""欢迎使用 langchain-ChatGLM Web UI！
@@ -369,7 +370,7 @@ with gr.Blocks(css=block_css, theme=gr.themes.Default(**default_theme_args)) as 
                     select_vs = gr.Dropdown(get_vs_list(),
                                             label="请选择要加载的知识库",
                                             interactive=True,
-                                            value=get_vs_list()[0] if len(get_vs_list()) > 0 else None
+                                            value=get_vs_list()[1] if len(get_vs_list()) > 0 else None
                                             )
                     vs_name = gr.Textbox(label="请输入新建知识库名称，当前知识库命名暂不支持中文",
                                          lines=1,
@@ -575,5 +576,5 @@ with gr.Blocks(css=block_css, theme=gr.themes.Default(**default_theme_args)) as 
  .launch(server_name='10.13.30.51',
          server_port=7862,
          show_api=False,
-         share=False,
+         share=True,
          inbrowser=False))
